@@ -4,7 +4,7 @@
 PID=0
 CURRENT_PATH=`pwd`
 DIST_PATH="${CURRENT_PATH}/grav-dist"
-TMP_PATH="${CURRENT_PATH}/grav-tmp"
+TMP_PATH="${CURRENT_PATH}/grav-dist-tmp"
 GRAV_CORE_PATH="${TMP_PATH}/grav"
 
 # Github Vars
