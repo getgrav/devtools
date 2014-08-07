@@ -78,9 +78,14 @@ read -e -p "Specify the path where Grav projects should get cloned at [default: 
 
 if [ -z $DEST ]; then
     DEST=$CLONES_PATH
-    echo -e "  -> No path was specified, assumed '${DEST}' \n"
+    echo "  -> No path was specified, assumed '${DEST}'"
 fi
 
+# Let's fix the tilde that bash doesnt work very well with
+DEST="${DEST/\~/$HOME}"
+
+echo ""
+echo $DEST
 mkdir -p $DEST
 
 echo -e "Cloning ${#GRAV_PROJECTS[@]} projects (this might take some time)...\n"
@@ -89,6 +94,7 @@ for project in ${!GRAV_PROJECTS[@]}
 do
     URL="$GITHUB${GRAV_PROJECTS[$project]}.git"
     progress "    Grabbing ${GRAV_PROJECTS[project]} [$(($project + 1))/${#GRAV_PROJECTS[@]}]"
+    rm -rf "$DEST/${GRAV_PROJECTS[$project]}"
     git_clone $URL
     mv -f "$TMP_PATH/${GRAV_PROJECTS[$project]}" "$DEST/${GRAV_PROJECTS[$project]}"
     echo -en "...done\n"
