@@ -82,6 +82,14 @@ function url_exists(){
 function git_clone(){
     cd $TMP_PATH
     git clone --quiet $1
+    cd $2
+    for branch in `git branch -a | grep remotes | grep -v HEAD`; do
+        git branch --quiet --track ${branch##*/} $branch
+    done
+    git fetch --quiet --all
+    git pull --quiet --all
+    git flow init -fd > /dev/null 2>&1
+    cd $TMP_PATH
 }
 
 # Create a zip of a package without extra files not needed
@@ -126,7 +134,7 @@ do
 
     if [ ! -d "$DEST/${GRAV_PROJECTS[$project]}" -o $FORCE -eq 1 ]; then
         rm -rf "$DEST/${GRAV_PROJECTS[$project]}"
-        git_clone $URL
+        git_clone $URL ${GRAV_PROJECTS[$project]}
         mv -f "$TMP_PATH/${GRAV_PROJECTS[$project]}" "$DEST/${GRAV_PROJECTS[$project]}"
         echo -en "...${GREEN}${BOLD}done${TEXTRESET}"
     else
