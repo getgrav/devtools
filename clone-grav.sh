@@ -170,7 +170,9 @@ else
     done
 fi
 
-
+# Copy useful scripts at Dest
+## Pull All utility (pulls all git repos in the folder)
+cp -Rf "${CURRENT_PATH}/pull-all.sh" "${DEST}"
 
 # end
 
