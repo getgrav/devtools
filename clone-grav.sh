@@ -139,12 +139,12 @@ done
 
 # Hebe registering
 echo ""
-echo -e "Hebe registering ${#GRAV_PROJECTS[@]} projects...\n"
+echo -en "Hebe registering ${#GRAV_PROJECTS[@]} projects..."
 
 if [ -z $HEBE ]; then
-    echo -en "...${BOLD}hebe${TEXTRESET} comand not found. Please install it."
-
+    echo -en "${BOLD}hebe${TEXTRESET} comand not found. Please install it.\n"
 else
+    echo -e "\n"
     for project in ${!GRAV_PROJECTS[@]}
     do
         progress "    Registering ${GRAV_PROJECTS[project]} [$(($project + 1))/${#GRAV_PROJECTS[@]}]"
