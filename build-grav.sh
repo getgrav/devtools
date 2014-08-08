@@ -83,6 +83,63 @@ function parse_yaml() {
     }'
 }
 
+# Dependencies downloader and installer
+function dependencies_install(){
+    if [ -f "${1}" ]; then
+        echo "${2:-Installing dependencies:}"
+
+        POINTER=""
+        for line in $(parse_yaml "${1}" "deps_")
+        do
+            DEP_KEY=$(echo $line | cut -d "=" -f 1)
+            DEP_VALUE=$(echo $line | cut -d "=" -f 2)
+            DEP_TYPE=$(echo $DEP_KEY | cut -d "_" -f 2) # git
+            DEP_NAME=$(echo $DEP_KEY | cut -d "_" -f 3) # breadcrumbs
+            DEP_MODE=$(echo $DEP_KEY | cut -d "_" -f 4) # url|path|branch
+
+            if [ "${DEP_TYPE}" != 'git' ]; then
+                continue
+            fi
+
+            eval $line
+
+            if [ "${POINTER}" != "${DEP_NAME}" ]; then
+                declare "deps_git_parsed_$DEP_NAME"="name:$DEP_NAME;$DEP_MODE:$DEP_VALUE"
+                POINTER=$DEP_NAME
+            else
+                TMP="deps_git_parsed_$DEP_NAME"
+                declare "$TMP"+=";$DEP_MODE:$DEP_VALUE"
+            fi
+        done
+    fi
+
+    for k in ${!deps_git_parsed_*}; do
+
+        VALUE=$(echo ${!k} | tr -d "\"")
+
+        DEP_NAME=$(echo ${VALUE} | cut -d ";" -f 1 | cut -d ":" -f 2)
+        DEP_URL=$(echo ${VALUE} | cut -d ";" -f 2 | cut -d ":" -f 2-)
+        DEP_PATH=$(echo ${VALUE} | cut -d ";" -f 3 | cut -d ":" -f 2)
+        DEP_BRANCH=$(echo ${VALUE} | cut -d ";" -f 4 | cut -d ":" -f 2)
+        DEP_PREFIX=$(echo ${DEP_URL} | rev | cut -d "/" -f 1 | rev)
+
+        echo -n  "  "
+        progress "${BOLD}${BLUE}${DEP_NAME}${TEXTRESET}"
+
+        if [ ! -d $TMP_PATH/$DEP_PREFIX ]; then
+            cd $TMP_PATH
+            git_clone $DEP_URL
+        fi
+
+        mv -f "$TMP_PATH/$DEP_PREFIX" "$DEST/$DEP_PATH"
+
+        echo -en "...${BOLD}${GREEN}done${TEXTRESET}\n"
+        progress_stop $PID
+
+        #echo "k: $k, v: $VALUE"
+    done
+}
+
 
 
 # Create the dist and tmp folders if don't exist already
@@ -262,59 +319,13 @@ do
     progress_stop $PID
 
     ## Dependencies
-    if [ -f "${TMP_PATH}/${PREFIX}/.dependencies" ]; then
-        echo "Installing dependencies:"
-
-        POINTER=""
-        for line in $(parse_yaml "${TMP_PATH}/${PREFIX}/.dependencies" "deps_")
-        do
-            DEP_KEY=$(echo $line | cut -d "=" -f 1)
-            DEP_VALUE=$(echo $line | cut -d "=" -f 2)
-            DEP_TYPE=$(echo $DEP_KEY | cut -d "_" -f 2) # git
-            DEP_NAME=$(echo $DEP_KEY | cut -d "_" -f 3) # breadcrumbs
-            DEP_MODE=$(echo $DEP_KEY | cut -d "_" -f 4) # url|path|branch
-
-            if [ "${DEP_TYPE}" != 'git' ]; then
-                continue
-            fi
-
-            eval $line
-
-            if [ "${POINTER}" != "${DEP_NAME}" ]; then
-                declare "deps_git_parsed_$DEP_NAME"="name:$DEP_NAME;$DEP_MODE:$DEP_VALUE"
-                POINTER=$DEP_NAME
-            else
-                TMP="deps_git_parsed_$DEP_NAME"
-                declare "$TMP"+=";$DEP_MODE:$DEP_VALUE"
-            fi
-        done
+    if [ "$TYPE" == 'theme' -o "$TYPE" == 'plugin' ]; then
+        if [ -f "${DEST}/.dependencies" ]; then
+            dependencies_install "${DEST}/.dependencies" "Installing Grav dependencies:"
+        fi
     fi
 
-    for k in ${!deps_git_parsed_*}; do
-
-        VALUE=$(echo ${!k} | tr -d "\"")
-
-        DEP_NAME=$(echo ${VALUE} | cut -d ";" -f 1 | cut -d ":" -f 2)
-        DEP_URL=$(echo ${VALUE} | cut -d ";" -f 2 | cut -d ":" -f 2-)
-        DEP_PATH=$(echo ${VALUE} | cut -d ";" -f 3 | cut -d ":" -f 2)
-        DEP_BRANCH=$(echo ${VALUE} | cut -d ";" -f 4 | cut -d ":" -f 2)
-        DEP_PREFIX=$(echo ${DEP_URL} | rev | cut -d "/" -f 1 | rev)
-
-        echo -n  "  "
-        progress "${BOLD}${BLUE}${DEP_NAME}${TEXTRESET}"
-
-        if [ ! -d $TMP_PATH/$DEP_PREFIX ]; then
-            cd $TMP_PATH
-            git_clone $DEP_URL
-        fi
-
-        mv -f "$TMP_PATH/$DEP_PREFIX" "$DEST/$DEP_PATH"
-
-        echo -en "...${BOLD}${GREEN}done${TEXTRESET}\n"
-        progress_stop $PID
-
-        #echo "k: $k, v: $VALUE"
-    done
+    dependencies_install "${TMP_PATH}/${PREFIX}/.dependencies"
 
     # Finally create the package
     create_zip "${DEST}${VERSION}.zip" "./${PREFIX}"
