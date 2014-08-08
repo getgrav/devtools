@@ -13,10 +13,37 @@ PID=0
 CURRENT_PATH=`pwd`
 CLONES_PATH="${CURRENT_PATH}/grav-clones"
 TMP_PATH="${CURRENT_PATH}/grav-clones-tmp"
+HEBE=`command -v hebe`
+
+TEXTRESET=$(tput sgr0) # reset the foreground colour
+RED=$(tput setaf 1)
+GREEN=$(tput setaf 2)
+YELLOW=$(tput setaf 3)
+BLUE=$(tput setaf 4)
+BOLD=$(tput bold)
+
+
+FORCE=0
 
 # Github Vars
 GRAV_PREFIX='grav-'
 GITHUB='https://github.com/getgrav/'
+
+# Getopts
+while [[ $# -gt 0 ]]; do
+    opt="$1"
+    shift;
+    current_arg="$1"
+
+    if [[ "$current_arg" =~ ^-{1,2}.* ]]; then
+        echo "WARNING: You may have left an argument blank. Double check your command."
+    fi
+    case "$opt" in
+        "-f"|"--force") FORCE=1; shift;;
+        *             ) echo "ERROR: Invalid option: \""$opt"\"" >&2
+                        exit 1;;
+    esac
+done
 
 
 # Progress notice method
@@ -85,21 +112,57 @@ fi
 DEST="${DEST/\~/$HOME}"
 
 echo ""
-echo $DEST
 mkdir -p $DEST
 
+
+# Cloning from github
 echo -e "Cloning ${#GRAV_PROJECTS[@]} projects (this might take some time)...\n"
 
 for project in ${!GRAV_PROJECTS[@]}
 do
     URL="$GITHUB${GRAV_PROJECTS[$project]}.git"
     progress "    Grabbing ${GRAV_PROJECTS[project]} [$(($project + 1))/${#GRAV_PROJECTS[@]}]"
-    rm -rf "$DEST/${GRAV_PROJECTS[$project]}"
-    git_clone $URL
-    mv -f "$TMP_PATH/${GRAV_PROJECTS[$project]}" "$DEST/${GRAV_PROJECTS[$project]}"
-    echo -en "...done\n"
+    sleep 0.1
+
+    if [ ! -d "$DEST/${GRAV_PROJECTS[$project]}" -o $FORCE -eq 1 ]; then
+        rm -rf "$DEST/${GRAV_PROJECTS[$project]}"
+        git_clone $URL
+        mv -f "$TMP_PATH/${GRAV_PROJECTS[$project]}" "$DEST/${GRAV_PROJECTS[$project]}"
+        echo -en "...${GREEN}${BOLD}done${TEXTRESET}"
+    else
+        echo -en "...${YELLOW}${BOLD}skipped${TEXTRESET}"
+    fi
+
+    echo -en "\n"
     progress_stop $PID
 done
+
+# Hebe registering
+echo ""
+echo -e "Hebe registering ${#GRAV_PROJECTS[@]} projects...\n"
+
+if [ -z $HEBE ]; then
+    echo -en "...${BOLD}hebe${TEXTRESET} comand not found. Please install it."
+
+else
+    for project in ${!GRAV_PROJECTS[@]}
+    do
+        progress "    Registering ${GRAV_PROJECTS[project]} [$(($project + 1))/${#GRAV_PROJECTS[@]}]"
+        sleep 0.1
+
+        if [ ! -f "$DEST/${GRAV_PROJECTS[$project]}/hebe.json" ]; then
+            echo -n "...${YELLOW}${BOLD}skipped${TEXTRESET}"
+        else
+            hebe register "$DEST/${GRAV_PROJECTS[$project]}/hebe.json" +force > /dev/null 2>&1
+            echo -n "...${GREEN}${BOLD}done${TEXTRESET}"
+        fi
+
+        echo -en "\n"
+        progress_stop $PID
+    done
+fi
+
+
 
 # end
 
