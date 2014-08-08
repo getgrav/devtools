@@ -63,7 +63,7 @@ function git_clone(){
 # Create a zip of a package without extra files not needed
 function create_zip(){
     cd $DIST_PATH
-    zip -q -x *.git* -x *.DS_Store* -r $1 $2
+    zip -q -x *.git* -x *.DS_Store* -x *hebe.json* -r $1 $2
 }
 
 # YAML parser
@@ -201,18 +201,14 @@ do
     case $TYPE in
         base)
             VERSION="-v$(head -n 1 ${GRAV_CORE_PATH}/VERSION)"
-            PREFX="${GRAV_PREFIX}core-update"
+            PREFIX="${GRAV_PREFIX%?}"
 
             # Base grav package
-            DEST="${DIST_PATH}/${GRAV_PREFIX}core"
+            DEST="${DIST_PATH}/$PREFIX"
             cp -Rf "$GRAV_CORE_PATH" "$DEST"
-            create_zip "${DEST}-v${VERSION}.zip" "./${GRAV_PREFIX}core"
-            rm -Rf $DEST
 
             # Grav package for updates (no user folder)
-            DEST="${DIST_PATH}/${GRAV_PREFIX}core-update"
-            cp -Rf "$GRAV_CORE_PATH" "$DEST"
-            rm -rf "$DEST/user"
+            ## This whille happen as special case in the deps down below
             ;;
 
         skeleton | theme | plugin)
@@ -322,7 +318,20 @@ do
 
     # Finally create the package
     create_zip "${DEST}${VERSION}.zip" "./${PREFIX}"
+
+    if [ "$TYPE" == 'base' ]; then
+        # special case for grav core, creating an update package with no user folder
+        DEST_UPD="${DIST_PATH}/${PREFIX}-update"
+        cp -Rf "$GRAV_CORE_PATH" "$DEST_UPD"
+        rm -Rf "$DEST_UPD/user"
+        create_zip "${DEST_UPD}${VERSION}.zip" "./${PREFIX}-update"
+
+        rm -Rf $DEST_UPD
+    fi
+
     rm -Rf $DEST
+
+
     echo -e "Package for '${BLUE}${BOLD}${NAME}${TEXTRESET}' has been created.\n"
 
 done
@@ -333,5 +342,5 @@ echo ""
 echo "All packages have been built and can be found at: "
 echo -e "->  ${YELLOW}${BOLD}${DIST_PATH}${TEXTRESET}\n"
 progress_stop $PID
-rm -Rf $TMP_PATH # 2> /dev/null
+#rm -Rf $TMP_PATH # 2> /dev/null
 echo ""
