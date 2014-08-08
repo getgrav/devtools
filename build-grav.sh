@@ -7,8 +7,17 @@ DIST_PATH="${CURRENT_PATH}/grav-dist"
 TMP_PATH="${CURRENT_PATH}/grav-dist-tmp"
 GRAV_CORE_PATH="${TMP_PATH}/grav"
 
+# Colors
+TEXTRESET=$(tput sgr0) # reset the foreground colour
+RED=$(tput setaf 1)
+GREEN=$(tput setaf 2)
+YELLOW=$(tput setaf 3)
+BLUE=$(tput setaf 4)
+BOLD=$(tput bold)
+
 # Github Vars
 GRAV_PREFIX='grav-'
+YAML_PREFIX="deps_"
 GRAV_TYPES=(plugin skeleton theme)
 GRAV_CORE='https://github.com/getgrav/grav.git'
 GITHUB='https://github.com/getgrav/'
@@ -55,6 +64,23 @@ function git_clone(){
 function create_zip(){
     cd $DIST_PATH
     zip -q -x *.git* -x *.DS_Store* -r $1 $2
+}
+
+# YAML parser
+function parse_yaml() {
+    local prefix=$2
+    local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
+    sed -ne "s|^\($s\)\($w\)$s:$s\"\(.*\)\"$s\$|\1$fs\2$fs\3|p" \
+        -e "s|^\($s\)\($w\)$s:$s\(.*\)$s\$|\1$fs\2$fs\3|p"  $1 |
+    awk -F$fs '{
+        indent = length($1)/4;
+        vname[indent] = $2;
+        for (i in vname) {if (i > indent) {delete vname[i]}}
+        if (length($3) > 0) {
+            vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+            printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, $2, $3);
+        }
+    }'
 }
 
 
@@ -118,8 +144,9 @@ done
 progress_stop $PID
 
 # Exist if no project was found
-if [ ${#PACKAGES_KEYS[@]} -eq 0 ]; then
-    echo -e "...no project found."
+if [ $((${#PACKAGES_KEYS[@]} - 1)) -eq 0 ]; then
+    rm -Rf $TMP_PATH
+    echo -e "...${RED}${BOLD}no project found${TEXTRESET}.\n"
     exit 0
 fi
 
@@ -138,21 +165,21 @@ do
         continue
     fi
 
-    progress "Cloning project '${NAME} (${TYPE})'"
+    progress "Cloning project '${BLUE}${BOLD}${NAME} (${TYPE})${TEXTRESET}'"
     sleep 0.2
 
     if [ ! -d $TMP_PATH/$NAME ]; then
         git_clone $URL
     else
-        echo -en ".skipped [exists]."
+        echo -en ".${YELLOW}${BOLD}skipped${TEXTRESET} [exists]."
     fi
 
-    # 0 base grav https://github.com/getgrav/grav.git
-    echo -en "...done\n"
+    echo -en "...${GREEN}${BOLD}done${TEXTRESET}\n"
     progress_stop $PID
 done
 
-echo ""
+echo -e "\n"
+
 # Building dists
 for index in ${!PACKAGES_KEYS[@]}
 do
@@ -166,14 +193,15 @@ do
     fi
 
     # Build based on strategies
-    progress "Building '${NAME}'"
+    progress "Prepping '${BLUE}${BOLD}${NAME}${TEXTRESET}' for building"
     sleep 0.2
 
     # Let's change dir to dist
 
     case $TYPE in
         base)
-            VERSION=$(head -n 1 ${GRAV_CORE_PATH}/VERSION)
+            VERSION="-v$(head -n 1 ${GRAV_CORE_PATH}/VERSION)"
+            PREFX="${GRAV_PREFIX}core-update"
 
             # Base grav package
             DEST="${DIST_PATH}/${GRAV_PREFIX}core"
@@ -185,15 +213,13 @@ do
             DEST="${DIST_PATH}/${GRAV_PREFIX}core-update"
             cp -Rf "$GRAV_CORE_PATH" "$DEST"
             rm -rf "$DEST/user"
-            create_zip "${DEST}-v${VERSION}.zip" "./${GRAV_PREFIX}core-update"
-            rm -Rf $DEST
             ;;
 
         skeleton | theme | plugin)
             PREFIX=${GRAV_PREFIX}${TYPE}-${NAME}
             SOURCE=${TMP_PATH}/${PREFIX}
             DEST=${DIST_PATH}/${PREFIX}
-            VERSION=$(head -n 1 ${SOURCE}/VERSION)
+            VERSION="-v$(head -n 1 ${SOURCE}/VERSION)"
 
             if [ "$TYPE" == "skeleton" ]; then
                 LOCATION="user"
@@ -215,14 +241,13 @@ do
                 rm -Rf "${DEST}/${LOCATION}/${NAME}"
                 cp -Rf "$SOURCE" "$DEST/${LOCATION}/${NAME}"
             fi
-            create_zip "$DEST-v${VERSION}.zip" "./${PREFIX}"
-            rm -Rf $DEST
             ;;
 
         grav-learn)
             PREFIX=${NAME}
-            SOURCE="${TMP_PATH}/${PREFIX}/user"
+            SOURCE=${TMP_PATH}/${PREFIX}
             DEST=${DIST_PATH}/${PREFIX}
+            VERSION=""
 
             ## Skeleton Package with Grav wrapped
             # 1. Let's copy grav and delete the user folder if exists
@@ -231,19 +256,74 @@ do
 
             # 2. Let's copy the skeleton in the Grav instance
             cp -Rf "$SOURCE" "$DEST/user"
-
-            create_zip "$DEST.zip" "./${PREFIX}"
-            rm -Rf $DEST
             ;;
 
         *)
-            echo "Strategy $TYPE for $NAME not implemented"
-            exit 1
+            echo -n "..Strategy '${RED}${BOLD}$TYPE${TEXTRESET}' for '${BLUE}${BOLD}$NAME${TEXTRESET}' not implemented.."
     esac
 
-    echo -en "...done\n"
-
+    echo -en "...${GREEN}${BOLD}done${TEXTRESET}\n"
     progress_stop $PID
+
+    ## Dependencies
+    if [ -f "${TMP_PATH}/${PREFIX}/.dependencies" ]; then
+        echo "Installing dependencies:"
+
+        POINTER=""
+        for line in $(parse_yaml "${TMP_PATH}/${PREFIX}/.dependencies" "deps_")
+        do
+            DEP_KEY=$(echo $line | cut -d "=" -f 1)
+            DEP_VALUE=$(echo $line | cut -d "=" -f 2)
+            DEP_TYPE=$(echo $DEP_KEY | cut -d "_" -f 2) # git
+            DEP_NAME=$(echo $DEP_KEY | cut -d "_" -f 3) # breadcrumbs
+            DEP_MODE=$(echo $DEP_KEY | cut -d "_" -f 4) # url|path|branch
+
+            if [ "${DEP_TYPE}" != 'git' ]; then
+                continue
+            fi
+
+            eval $line
+
+            if [ "${POINTER}" != "${DEP_NAME}" ]; then
+                declare "deps_git_parsed_$DEP_NAME"="name:$DEP_NAME;$DEP_MODE:$DEP_VALUE"
+                POINTER=$DEP_NAME
+            else
+                TMP="deps_git_parsed_$DEP_NAME"
+                declare "$TMP"+=";$DEP_MODE:$DEP_VALUE"
+            fi
+        done
+    fi
+
+    for k in ${!deps_git_parsed_*}; do
+
+        VALUE=$(echo ${!k} | tr -d "\"")
+
+        DEP_NAME=$(echo ${VALUE} | cut -d ";" -f 1 | cut -d ":" -f 2)
+        DEP_URL=$(echo ${VALUE} | cut -d ";" -f 2 | cut -d ":" -f 2-)
+        DEP_PATH=$(echo ${VALUE} | cut -d ";" -f 3 | cut -d ":" -f 2)
+        DEP_BRANCH=$(echo ${VALUE} | cut -d ";" -f 4 | cut -d ":" -f 2)
+        DEP_PREFIX=$(echo ${DEP_URL} | rev | cut -d "/" -f 1 | rev)
+
+        echo -n  "  "
+        progress "${BOLD}${BLUE}${DEP_NAME}${TEXTRESET}"
+
+        if [ ! -d $TMP_PATH/$DEP_PREFIX ]; then
+            cd $TMP_PATH
+            git_clone $DEP_URL
+        fi
+
+        mv -f "$TMP_PATH/$DEP_PREFIX" "$DEST/$DEP_PATH"
+
+        echo -en "...${BOLD}${GREEN}done${TEXTRESET}\n"
+        progress_stop $PID
+
+        #echo "k: $k, v: $VALUE"
+    done
+
+    # Finally create the package
+    create_zip "${DEST}${VERSION}.zip" "./${PREFIX}"
+    rm -Rf $DEST
+    echo -e "Package for '${BLUE}${BOLD}${NAME}${TEXTRESET}' has been created.\n"
 
 done
 
@@ -251,7 +331,7 @@ done
 
 echo ""
 echo "All packages have been built and can be found at: "
-echo -e "->  ${DIST_PATH}\n"
+echo -e "->  ${YELLOW}${BOLD}${DIST_PATH}${TEXTRESET}\n"
 progress_stop $PID
 rm -Rf $TMP_PATH # 2> /dev/null
 echo ""
