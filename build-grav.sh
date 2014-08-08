@@ -63,7 +63,7 @@ function git_clone(){
 # Create a zip of a package without extra files not needed
 function create_zip(){
     cd $DIST_PATH
-    zip -q -x *.git* -x *.DS_Store* -x *hebe.json* -r $1 $2
+    zip -q -x *.git* -x *.DS_Store* -x *hebe.json* -x *.dependencies* -r $1 $2
 }
 
 # YAML parser
