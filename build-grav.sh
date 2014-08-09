@@ -21,6 +21,8 @@ YAML_PREFIX="deps_"
 GRAV_TYPES=(plugin skeleton theme)
 GRAV_CORE='https://github.com/getgrav/grav.git'
 GITHUB='https://github.com/getgrav/'
+BITBUCKET='https://bitbucket.org/rockettheme/'
+BITBUCKET_CLONE='git@bitbucket.org:rockettheme/'
 
 # Progress notice method
 function progress(){
@@ -50,8 +52,16 @@ function progress_stop(){
 
 # Ping URL and returns 0 if exists
 function url_exists(){
-    curl --output /dev/null --location --silent --head --fail "$1"
-    return $?
+    status=$(curl --output /dev/null --location --silent --head --fail --write-out "%{http_code}" "$1")
+
+    if [ $status -eq 200 -o $status -eq 401 ]; then
+        return 1
+    else
+        return 0
+    fi
+
+    # curl --output /dev/null --location --silent --head --fail "$1"
+    # return $?
 }
 
 # Clone a git repo
@@ -122,13 +132,14 @@ function dependencies_install(){
         DEP_PATH=$(echo ${VALUE} | cut -d ";" -f 3 | cut -d ":" -f 2)
         DEP_BRANCH=$(echo ${VALUE} | cut -d ";" -f 4 | cut -d ":" -f 2)
         DEP_PREFIX=$(echo ${DEP_URL} | rev | cut -d "/" -f 1 | rev)
+        DEP_TYPE=$(echo ${DEP_PREFIX} | cut -d "-" -f 2)
 
         echo -n  "  "
-        progress "${BOLD}${BLUE}${DEP_NAME}${TEXTRESET}"
+        progress "${BOLD}${BLUE}${DEP_NAME}${TEXTRESET} ${BLUE}[${DEP_TYPE}]${TEXTRESET}"
 
         if [ ! -d $TMP_PATH/$DEP_PREFIX ]; then
             cd $TMP_PATH
-            git_clone $DEP_URL
+            git_clone ${DEP_URL/https\:\/\/bitbucket\.org\/rockettheme/git@bitbucket.org:rockettheme}
         fi
 
         mv -f "$TMP_PATH/$DEP_PREFIX" "$DEST/$DEP_PATH"
@@ -157,7 +168,7 @@ echo -n "Enter the project(s) (comma/space separated) that you want to build: "
 read projects
 
 # Start progress
-progress "Finding projects on github"
+progress "Finding projects on GitHub and Bitbucket"
 
 # Convert to array the projects and check if exist
 IFS=', ' read -a projects <<< "$projects"
@@ -169,11 +180,21 @@ PACKAGES_VALUES=(${GRAV_CORE})
 for index in "${!projects[@]}"
 do
     URL="${GITHUB}${projects[index]}.git"
+    BURL="${BITBUCKET}${projects[index]}"
+    BCLONE="${BITBUCKET_CLONE}${projects[index]}.git"
 
     # Pinging github to ensure the project is there
     url_exists $URL
     EXISTS=$?
+
+    # If not found on github we try Bitbucket
     if [ $EXISTS -eq 0 ]; then
+        url_exists $BURL
+        EXISTS=$?
+        if [ $EXISTS -eq 1 ]; then URL=$BCLONE; fi
+    fi
+
+    if [ $EXISTS -eq 1 ]; then
         if [ ${projects[index]} == "grav" ]; then
             PACKAGES_KEYS+=('base')
         else
@@ -186,12 +207,21 @@ do
     for prefix in "${!GRAV_TYPES[@]}"
     do
         URL="${GITHUB}${GRAV_PREFIX}${GRAV_TYPES[prefix]}-${projects[index]}.git"
+        BURL="${BITBUCKET}${GRAV_PREFIX}${GRAV_TYPES[prefix]}-${projects[index]}"
+        BCLONE="${BITBUCKET_CLONE}${GRAV_PREFIX}${GRAV_TYPES[prefix]}-${projects[index]}.git"
 
         # Pinging github to ensure the project is there
         url_exists $URL
         EXISTS=$?
 
+        # If not found on github we try Bitbucket
         if [ $EXISTS -eq 0 ]; then
+            url_exists $BURL
+            EXISTS=$?
+            if [ $EXISTS -eq 1 ]; then URL=$BCLONE; fi
+        fi
+
+        if [ $EXISTS -eq 1 ]; then
             PACKAGES_KEYS+=(${GRAV_TYPES[prefix]})
             PACKAGES_NAMES+=(${projects[index]})
             PACKAGES_VALUES+=(${URL})
@@ -296,7 +326,7 @@ do
             fi
             ;;
 
-        grav-learn)
+        grav-learn | grav-demo-sampler)
             PREFIX=${NAME}
             SOURCE=${TMP_PATH}/${PREFIX}
             DEST=${DIST_PATH}/${PREFIX}
@@ -312,7 +342,7 @@ do
             ;;
 
         *)
-            echo -n "..Strategy '${RED}${BOLD}$TYPE${TEXTRESET}' for '${BLUE}${BOLD}$NAME${TEXTRESET}' not implemented.."
+            echo -n "..${RED}${BOLD}[strategy '$TYPE' not implemented]${TEXTRESET}.."
     esac
 
     echo -en "...${GREEN}${BOLD}done${TEXTRESET}\n"
