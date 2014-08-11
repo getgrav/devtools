@@ -383,5 +383,5 @@ echo ""
 echo "All packages have been built and can be found at: "
 echo -e "->  ${YELLOW}${BOLD}${DIST_PATH}${TEXTRESET}\n"
 progress_stop $PID
-#rm -Rf $TMP_PATH # 2> /dev/null
+rm -Rf $TMP_PATH # 2> /dev/null
 echo ""
