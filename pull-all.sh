@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 GIT_FOLDERS=(`pwd`/*)
 
 # update GIT projects
