@@ -159,12 +159,20 @@ mkdir -p ${TMP_PATH}
 
 # Start of output
 echo ""
-echo "Grav Build System"
+echo "${YELLOW}${BOLD}Grav Build System${TEXTRESET}"
 echo "================="
+echo ""
+echo "Some projects name examples:"
+echo "  ${BLUE}${BOLD}grav${TEXTRESET}              [on github:    grav]"
+echo "  ${BLUE}${BOLD}grav-demo-sampler${TEXTRESET} [on bitbucket: grav-demo-sampler]"
+echo "  ${BLUE}${BOLD}antimatter${TEXTRESET}        [on github:    grav-theme-antimatter]"
+echo "  ${BLUE}${BOLD}breadcrumbs${TEXTRESET}       [on github:    grav-plugin-breadcrumbs]"
+echo "  ${BLUE}${BOLD}blog-site${TEXTRESET}         [on github:    grav-skeleton-blog-site]"
+echo "  ${BLUE}${BOLD}grav-learn${TEXTRESET}        [on github:    grav-learn]"
 echo ""
 
 # Read user projects input
-echo -n "Enter the project(s) (comma/space separated) that you want to build: "
+echo -n "Enter the project(s) name (comma/space separated) that you want to build: "
 read projects
 
 # Start progress
