@@ -1,13 +1,16 @@
 #!/bin/bash
 
 # Projects List
-GRAV_PROJECTS=(grav \
+GRAV_GITHUB_PROJECTS=(grav \
                grav-learn \
-               grav-skeleton-blog-site \
+               grav-skeleton-blog-site grav-skeleton-shop-site \
                grav-theme-antimatter grav-theme-bootstrap grav-theme-afterburner2 \
-               grav-plugin-problems grav-plugin-sitemap grav-plugin-error grav-plugin-taxonomylist grav-plugin-simplesearch grav-plugin-random grav-plugin-pagination grav-plugin-feed grav-plugin-breadcrumbs
+               grav-plugin-problems grav-plugin-sitemap grav-plugin-error grav-plugin-taxonomylist grav-plugin-simplesearch grav-plugin-random grav-plugin-pagination grav-plugin-feed grav-plugin-breadcrumbs grav-plugin-lightslider grav-plugin-snipcart
                )
-
+GRAV_BITBUCKET_PROJECTS=(grav-site \
+                    grav-demo-sampler \
+                    grav-plugin-form grav-plugin-admin grav-plugin-email
+                )
 # Script Vars
 PID=0
 CURRENT_PATH=`pwd`
@@ -27,7 +30,8 @@ FORCE=0
 
 # Github Vars
 GRAV_PREFIX='grav-'
-GITHUB='https://github.com/getgrav/'
+GITHUB="https://github.com/getgrav/"
+BITBUCKET="git@bitbucket.org:rockettheme/"
 
 # Getopts
 while [[ $# -gt 0 ]]; do
@@ -123,19 +127,42 @@ echo ""
 mkdir -p $DEST
 
 
-# Cloning from github
-echo -e "Cloning ${#GRAV_PROJECTS[@]} projects (this might take some time)...\n"
+PROJECTS_COUNT=$((${#GRAV_GITHUB_PROJECTS[@]} + ${#GRAV_BITBUCKET_PROJECTS[@]}))
 
-for project in ${!GRAV_PROJECTS[@]}
+# Cloning from github
+echo -e "Cloning $PROJECTS_COUNT projects (this might take some time)...\n"
+
+for project in ${!GRAV_GITHUB_PROJECTS[@]}
 do
-    URL="$GITHUB${GRAV_PROJECTS[$project]}.git"
-    progress "    Grabbing ${GRAV_PROJECTS[project]} [$(($project + 1))/${#GRAV_PROJECTS[@]}]"
+    URL="$GITHUB${GRAV_GITHUB_PROJECTS[$project]}.git"
+    progress "    Grabbing ${GRAV_GITHUB_PROJECTS[project]} [$(($project + 1))/$PROJECTS_COUNT]"
     sleep 0.1
 
-    if [ ! -d "$DEST/${GRAV_PROJECTS[$project]}" -o $FORCE -eq 1 ]; then
-        rm -rf "$DEST/${GRAV_PROJECTS[$project]}"
-        git_clone $URL ${GRAV_PROJECTS[$project]}
-        mv -f "$TMP_PATH/${GRAV_PROJECTS[$project]}" "$DEST/${GRAV_PROJECTS[$project]}"
+    if [ ! -d "$DEST/${GRAV_GITHUB_PROJECTS[$project]}" -o $FORCE -eq 1 ]; then
+        rm -rf "$DEST/${GRAV_GITHUB_PROJECTS[$project]}"
+        git_clone $URL ${GRAV_GITHUB_PROJECTS[$project]}
+        mv -f "$TMP_PATH/${GRAV_GITHUB_PROJECTS[$project]}" "$DEST/${GRAV_GITHUB_PROJECTS[$project]}"
+        echo -en "...${GREEN}${BOLD}done${TEXTRESET}"
+    else
+        echo -en "...${YELLOW}${BOLD}skipped${TEXTRESET}"
+    fi
+
+    echo -en "\n"
+    progress_stop $PID
+done
+
+# Cloning from bitbucket
+
+for project in ${!GRAV_BITBUCKET_PROJECTS[@]}
+do
+    URL="$BITBUCKET${GRAV_BITBUCKET_PROJECTS[$project]}.git"
+    progress "    Grabbing ${GRAV_BITBUCKET_PROJECTS[project]} [$(($project + ${#GRAV_GITHUB_PROJECTS[@]} + 1))/$PROJECTS_COUNT]"
+    sleep 0.1
+
+    if [ ! -d "$DEST/${GRAV_BITBUCKET_PROJECTS[$project]}" -o $FORCE -eq 1 ]; then
+        rm -rf "$DEST/${GRAV_BITBUCKET_PROJECTS[$project]}"
+        git_clone $URL ${GRAV_BITBUCKET_PROJECTS[$project]}
+        mv -f "$TMP_PATH/${GRAV_BITBUCKET_PROJECTS[$project]}" "$DEST/${GRAV_BITBUCKET_PROJECTS[$project]}"
         echo -en "...${GREEN}${BOLD}done${TEXTRESET}"
     else
         echo -en "...${YELLOW}${BOLD}skipped${TEXTRESET}"
@@ -147,21 +174,40 @@ done
 
 # Hebe registering
 echo ""
-echo -en "Hebe registering ${#GRAV_PROJECTS[@]} projects..."
+echo -en "Hebe registering $PROJECTS_COUNT projects..."
 
 if [ -z $HEBE ]; then
     echo -en "${BOLD}hebe${TEXTRESET} comand not found. Please install it.\n"
 else
     echo -e "\n"
-    for project in ${!GRAV_PROJECTS[@]}
+
+    # Registering GitHub Projects
+    for project in ${!GRAV_GITHUB_PROJECTS[@]}
     do
-        progress "    Registering ${GRAV_PROJECTS[project]} [$(($project + 1))/${#GRAV_PROJECTS[@]}]"
+        progress "    Registering ${GRAV_GITHUB_PROJECTS[project]} [$(($project + 1))/$PROJECTS_COUNT]"
         sleep 0.1
 
-        if [ ! -f "$DEST/${GRAV_PROJECTS[$project]}/hebe.json" ]; then
+        if [ ! -f "$DEST/${GRAV_GITHUB_PROJECTS[$project]}/hebe.json" ]; then
             echo -n "...${YELLOW}${BOLD}skipped${TEXTRESET}"
         else
-            hebe register "$DEST/${GRAV_PROJECTS[$project]}/hebe.json" +force > /dev/null 2>&1
+            hebe register "$DEST/${GRAV_GITHUB_PROJECTS[$project]}/hebe.json" +force > /dev/null 2>&1
+            echo -n "...${GREEN}${BOLD}done${TEXTRESET}"
+        fi
+
+        echo -en "\n"
+        progress_stop $PID
+    done
+
+    # Registering Bitbucket Projects
+    for project in ${!GRAV_BITBUCKET_PROJECTS[@]}
+    do
+        progress "    Registering ${GRAV_BITBUCKET_PROJECTS[project]} [$(($project + ${#GRAV_GITHUB_PROJECTS[@]} + 1))/$PROJECTS_COUNT]"
+        sleep 0.1
+
+        if [ ! -f "$DEST/${GRAV_BITBUCKET_PROJECTS[$project]}/hebe.json" ]; then
+            echo -n "...${YELLOW}${BOLD}skipped${TEXTRESET}"
+        else
+            hebe register "$DEST/${GRAV_BITBUCKET_PROJECTS[$project]}/hebe.json" +force > /dev/null 2>&1
             echo -n "...${GREEN}${BOLD}done${TEXTRESET}"
         fi
 
