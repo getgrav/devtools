@@ -168,6 +168,8 @@ echo "  ${BLUE}${BOLD}grav-demo-sampler${TEXTRESET} [on bitbucket: grav-demo-sam
 echo "  ${BLUE}${BOLD}antimatter${TEXTRESET}        [on github:    grav-theme-antimatter]"
 echo "  ${BLUE}${BOLD}breadcrumbs${TEXTRESET}       [on github:    grav-plugin-breadcrumbs]"
 echo "  ${BLUE}${BOLD}blog-site${TEXTRESET}         [on github:    grav-skeleton-blog-site]"
+echo "  ${BLUE}${BOLD}shop-site${TEXTRESET}         [on github:    grav-skeleton-shop-site]"
+echo "  ${BLUE}${BOLD}onepage-site${TEXTRESET}      [on github:    grav-skeleton-onepage-site]"
 echo "  ${BLUE}${BOLD}grav-learn${TEXTRESET}        [on github:    grav-learn]"
 echo ""
 
