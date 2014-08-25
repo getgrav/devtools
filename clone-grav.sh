@@ -3,7 +3,7 @@
 # Projects List
 GRAV_GITHUB_PROJECTS=(grav \
                grav-learn \
-               grav-skeleton-blog-site grav-skeleton-shop-site \
+               grav-skeleton-blog-site grav-skeleton-shop-site grav-skeleton-onepage-site \
                grav-theme-antimatter grav-theme-bootstrap grav-theme-afterburner2 \
                grav-plugin-problems grav-plugin-sitemap grav-plugin-error grav-plugin-taxonomylist grav-plugin-simplesearch grav-plugin-random grav-plugin-pagination grav-plugin-feed grav-plugin-breadcrumbs grav-plugin-lightslider grav-plugin-snipcart grav-plugin-twigcache grav-plugin-github
                )
