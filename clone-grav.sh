@@ -9,7 +9,7 @@ GRAV_GITHUB_PROJECTS=(grav \
                )
 GRAV_BITBUCKET_PROJECTS=(grav-site \
                     grav-demo-sampler \
-                    grav-plugin-form grav-plugin-admin grav-plugin-email
+                    grav-plugin-form grav-plugin-admin grav-plugin-email grav-plugin-login
                 )
 # Script Vars
 PID=0
