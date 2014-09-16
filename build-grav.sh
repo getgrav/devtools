@@ -275,7 +275,7 @@ do
     progress_stop $PID
 done
 
-echo -e "\n"
+echo ""
 
 # Building dists
 for index in ${!PACKAGES_KEYS[@]}
@@ -286,6 +286,14 @@ do
 
     # We want to skip core, it's used only as a base for building other packages
     if [ "$NAME" == 'grav' -a  "${TYPE}" == 'core' ]; then
+        progress "Installing ${BLUE}${BOLD}grav${TEXTRESET} vendor dependencies [might take a while]."
+        sleep 0.2
+        cd ${GRAV_CORE_PATH}
+        composer --no-interaction install -o -q
+
+        echo -en "...${GREEN}${BOLD}done${TEXTRESET}\n\n"
+
+        progress_stop $PID
         continue
     fi
 
