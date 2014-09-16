@@ -291,6 +291,8 @@ do
         cd ${GRAV_CORE_PATH}
         composer --no-interaction install -o -q
 
+        bin/grav clean &>/dev/null
+
         echo -en "...${GREEN}${BOLD}done${TEXTRESET}\n\n"
 
         progress_stop $PID
