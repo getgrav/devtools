@@ -307,7 +307,8 @@ do
 
     case $TYPE in
         base)
-            VERSION="-v$(head -n 1 ${GRAV_CORE_PATH}/VERSION)"
+            #VERSION="-v$(head -n 1 ${GRAV_CORE_PATH}/VERSION)"
+            VERSION="-v$(grep 'GRAV_VERSION' ${GRAV_CORE_PATH}/system/defines.php|awk -F", '" '{ print $2 }'|awk -F"'" '{ print $1 }')"
             PREFIX="${GRAV_PREFIX%?}"
 
             # Base grav package
@@ -322,7 +323,8 @@ do
             PREFIX=${GRAV_PREFIX}${TYPE}-${NAME}
             SOURCE=${TMP_PATH}/${PREFIX}
             DEST=${DIST_PATH}/${PREFIX}
-            VERSION="-v$(head -n 1 ${SOURCE}/VERSION)"
+            #VERSION="-v$(head -n 1 ${SOURCE}/VERSION)"
+            VERSION="-v$(grep 'version:' ${SOURCE}/blueprints.yaml|awk -F": " '{ print $2 }')"
 
             if [ "$TYPE" == "skeleton" ]; then
                 LOCATION="user"
