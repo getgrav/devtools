@@ -3,8 +3,8 @@
 # Projects List
 GRAV_GITHUB_PROJECTS=(grav \
                grav-learn \
-               grav-skeleton-blog-site grav-skeleton-shop-site grav-skeleton-onepage-site grav-skeleton-hpstr-site grav-skeleton-mediator-site grav-skeleton-notepad-site \
-               grav-theme-antimatter grav-theme-bootstrap grav-theme-afterburner2 grav-theme-hpstr grav-theme-mediator grav-theme-notepad \
+               grav-skeleton-blog-site grav-skeleton-shop-site grav-skeleton-onepage-site grav-skeleton-hpstr-site grav-skeleton-mediator-site grav-skeleton-notepad-site grav-skeleton-agency-site \
+               grav-theme-antimatter grav-theme-bootstrap grav-theme-afterburner2 grav-theme-hpstr grav-theme-mediator grav-theme-notepad grav-theme-agency \
                grav-plugin-problems grav-plugin-sitemap grav-plugin-error grav-plugin-taxonomylist grav-plugin-simplesearch grav-plugin-random grav-plugin-pagination grav-plugin-feed grav-plugin-breadcrumbs grav-plugin-lightslider grav-plugin-snipcart grav-plugin-twigcache grav-plugin-github grav-plugin-archives grav-plugin-highlight grav-plugin-assets grav-plugin-relatedpages grav-plugin-smartypants grav-plugin-featherlight grav-plugin-anchors
                )
 GRAV_BITBUCKET_PROJECTS=(grav-site \
