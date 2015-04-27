@@ -289,7 +289,7 @@ do
         progress "Installing ${BLUE}${BOLD}grav${TEXTRESET} vendor dependencies [might take a while]."
         sleep 0.2
         cd ${GRAV_CORE_PATH}
-        composer --no-interaction install -o -q
+        composer --no-interaction install --no-dev --prefer-dist -o -q
 
         bin/grav clean &>/dev/null
 
