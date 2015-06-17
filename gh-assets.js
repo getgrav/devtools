@@ -3,7 +3,7 @@ var args = process.argv.slice(2);
 process.stdin.resume();
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', function(data) {
-    if (data.length <= 2 || !data.match(/^{.+}$/)) {
+    if (data.length <= 2 || !data.match(/{.+}/)) {
         process.stdout.write('');
 
         return;
