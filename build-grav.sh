@@ -21,8 +21,12 @@ YAML_PREFIX="deps_"
 GRAV_TYPES=(plugin skeleton theme)
 GRAV_CORE='https://github.com/getgrav/grav.git'
 GITHUB='https://github.com/getgrav/'
-BITBUCKET='https://bitbucket.org/rockettheme/'
+BITBUCKET="https://${BB_TOKEN}bitbucket.org/rockettheme/"
 BITBUCKET_CLONE='git@bitbucket.org:rockettheme/'
+
+if [ -z "$BB_TOKEN" ]; then
+    BITBUCKET_CLONE=$BITBUCKET # for travis
+fi
 
 # Progress notice method
 function progress(){
@@ -54,7 +58,7 @@ function progress_stop(){
 function url_exists(){
     status=$(curl --output /dev/null --location --silent --head --fail --write-out "%{http_code}" "$1")
 
-    if [ $status -eq 200 -o $status -eq 401 ]; then
+    if [[ $status == "200" || $status == "401" || $status == "302" ]]; then
         return 1
     else
         return 0
@@ -67,13 +71,13 @@ function url_exists(){
 # Clone a git repo
 function git_clone(){
     cd $TMP_PATH
-    git clone --quiet $1
+    git clone --quiet --depth=50 --branch=master $1  &>/dev/null;
 }
 
 # Create a zip of a package without extra files not needed
 function create_zip(){
     cd $DIST_PATH
-    zip -q -x "*.git/*" -x *.gitignore* -x *.editorconfig* -x *.DS_Store* -x *hebe.json* -x *.dependencies* -r $1 $2
+    zip -q -x "*.git/*" -x *.gitignore* -x *.editorconfig* -x *.DS_Store* -x *hebe.json* -x *.dependencies* *.travis.yml* -r $1 $2
 }
 
 # YAML parser
@@ -139,7 +143,14 @@ function dependencies_install(){
 
         if [ ! -d $TMP_PATH/$DEP_PREFIX ]; then
             cd $TMP_PATH
-            git_clone ${DEP_URL/https\:\/\/bitbucket\.org\/rockettheme/git@bitbucket.org:rockettheme}
+
+            if [ -z $BB_TOKEN ]; then
+                # For travis
+                git_clone ${DEP_URL/https\:\/\/bitbucket\.org\/rockettheme/https\:\/\/${BB_TOKEN}bitbucket\.org\/rockettheme}
+            else
+                # For local
+                git_clone ${DEP_URL/https\:\/\/bitbucket\.org\/rockettheme/git@bitbucket.org:rockettheme}
+            fi
         fi
 
         mv -f "$TMP_PATH/$DEP_PREFIX" "$DEST/$DEP_PATH"
@@ -162,26 +173,37 @@ echo ""
 echo "${YELLOW}${BOLD}Grav Build System${TEXTRESET}"
 echo "================="
 echo ""
-echo "Some projects name examples:"
-echo "  ${BLUE}${BOLD}grav${TEXTRESET}              [on github:    grav]"
-echo "  ${BLUE}${BOLD}grav-demo-sampler${TEXTRESET} [on bitbucket: grav-demo-sampler]"
-echo "  ${BLUE}${BOLD}antimatter${TEXTRESET}        [on github:    grav-theme-antimatter]"
-echo "  ${BLUE}${BOLD}breadcrumbs${TEXTRESET}       [on github:    grav-plugin-breadcrumbs]"
-echo "  ${BLUE}${BOLD}blog-site${TEXTRESET}         [on github:    grav-skeleton-blog-site]"
-echo "  ${BLUE}${BOLD}shop-site${TEXTRESET}         [on github:    grav-skeleton-shop-site]"
-echo "  ${BLUE}${BOLD}onepage-site${TEXTRESET}      [on github:    grav-skeleton-onepage-site]"
-echo "  ${BLUE}${BOLD}grav-learn${TEXTRESET}        [on github:    grav-learn]"
-echo ""
 
-# Read user projects input
-echo -n "Enter the project(s) name (comma/space separated) that you want to build: "
-read projects
+# no stdin
+if [ -z $* ]; then
+    # Examples
+    echo "Some projects name examples:"
+    echo "  ${BLUE}${BOLD}grav${TEXTRESET}              [on github:    grav]"
+    echo "  ${BLUE}${BOLD}grav-demo-sampler${TEXTRESET} [on bitbucket: grav-demo-sampler]"
+    echo "  ${BLUE}${BOLD}antimatter${TEXTRESET}        [on github:    grav-theme-antimatter]"
+    echo "  ${BLUE}${BOLD}breadcrumbs${TEXTRESET}       [on github:    grav-plugin-breadcrumbs]"
+    echo "  ${BLUE}${BOLD}blog-site${TEXTRESET}         [on github:    grav-skeleton-blog-site]"
+    echo "  ${BLUE}${BOLD}shop-site${TEXTRESET}         [on github:    grav-skeleton-shop-site]"
+    echo "  ${BLUE}${BOLD}onepage-site${TEXTRESET}      [on github:    grav-skeleton-onepage-site]"
+    echo "  ${BLUE}${BOLD}grav-learn${TEXTRESET}        [on github:    grav-learn]"
+    echo ""
+
+    # Read user projects input
+    echo -n "Enter the project(s) name (comma/space separated) that you want to build: "
+    read projects
+
+
+    # Convert to array the projects and check if exist
+    IFS=', ' read -a projects <<< "$projects"
+else
+    # automatically builds grav and all the skeletons from `skeletons.txt`
+    projects="grav $(cat $*)"
+    IFS=' ' read -a projects <<< "$projects"
+fi
 
 # Start progress
 progress "Finding projects on GitHub and Bitbucket"
 
-# Convert to array the projects and check if exist
-IFS=', ' read -a projects <<< "$projects"
 PACKAGES_KEYS=('core')
 PACKAGES_NAMES=('grav')
 PACKAGES_VALUES=(${GRAV_CORE})
