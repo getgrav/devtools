@@ -15,7 +15,7 @@ process.stdin.on('data', function(data) {
     if (!assets) { process.stdout.write(''); }
     else {
         for (var k in assets) {
-            process.stdout.write(assets[k].id + '\n');
+            process.stdout.write(assets[k].id + ':' + assets[k].name + '\n');
         }
     }
 });
