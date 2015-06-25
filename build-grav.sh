@@ -73,7 +73,7 @@ function git_clone(){
     cd $TMP_PATH
     branch=$2
     if [ -z $branch ]; then
-        $branch='master'
+        branch='master'
     fi
     git clone --quiet --depth=50 --branch=$2 $1  &>/dev/null;
 }
@@ -148,7 +148,7 @@ function dependencies_install(){
         if [ ! -d $TMP_PATH/$DEP_PREFIX ]; then
             cd $TMP_PATH
 
-            if [ -z $BB_TOKEN ]; then
+            if [ ! -z $BB_TOKEN ]; then
                 # For travis
                 git_clone ${DEP_URL/https\:\/\/bitbucket\.org\/rockettheme/https\:\/\/${BB_TOKEN}bitbucket\.org\/rockettheme} $DEP_BRANCH
             else
