@@ -71,7 +71,11 @@ function url_exists(){
 # Clone a git repo
 function git_clone(){
     cd $TMP_PATH
-    git clone --quiet --depth=50 --branch=master $1  &>/dev/null;
+    branch=$2
+    if [ -z $branch ]; then
+        $branch='master'
+    fi
+    git clone --quiet --depth=50 --branch=$2 $1  &>/dev/null;
 }
 
 # Create a zip of a package without extra files not needed
