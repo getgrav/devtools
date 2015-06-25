@@ -144,12 +144,12 @@ function dependencies_install(){
         if [ ! -d $TMP_PATH/$DEP_PREFIX ]; then
             cd $TMP_PATH
 
-            if [ -z $BB_TOKEN ]; then
+            if [ ! -z $BB_TOKEN ]; then
                 # For travis
-                git_clone ${DEP_URL/https\:\/\/bitbucket\.org\/rockettheme/https\:\/\/${BB_TOKEN}bitbucket\.org\/rockettheme}
+                git_clone ${DEP_URL/https\:\/\/bitbucket\.org\/rockettheme/https\:\/\/${BB_TOKEN}bitbucket\.org\/rockettheme} $DEP_BRANCH
             else
                 # For local
-                git_clone ${DEP_URL/https\:\/\/bitbucket\.org\/rockettheme/git@bitbucket.org:rockettheme}
+                git_clone ${DEP_URL/https\:\/\/bitbucket\.org\/rockettheme/git@bitbucket.org:rockettheme} $DEP_BRANCH
             fi
         fi
 
