@@ -91,7 +91,7 @@ function parse_yaml() {
         vname[indent] = $2;
         for (i in vname) {if (i > indent) {delete vname[i]}}
         if (length($3) > 0) {
-            vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("_")}
+            vn=""; for (i=0; i<indent; i++) {vn=(vn)(vname[i])("___")}
             printf("%s%s%s=\"%s\"\n", "'$prefix'",vn, $2, $3);
         }
     }'
@@ -103,13 +103,13 @@ function dependencies_install(){
         echo "${2:-Installing dependencies:}"
 
         POINTER=""
-        for line in $(parse_yaml "${1}" "deps_")
+        for line in $(parse_yaml "${1}" "deps___")
         do
             DEP_KEY=$(echo $line | cut -d "=" -f 1)
             DEP_VALUE=$(echo $line | cut -d "=" -f 2)
-            DEP_TYPE=$(echo $DEP_KEY | cut -d "_" -f 2) # git
-            DEP_NAME=$(echo $DEP_KEY | cut -d "_" -f 3) # breadcrumbs
-            DEP_MODE=$(echo $DEP_KEY | cut -d "_" -f 4) # url|path|branch
+            DEP_TYPE=$(echo $DEP_KEY | awk -F "___" '{print $2}') # git
+            DEP_NAME=$(echo $DEP_KEY | awk -F "___" '{print $3}') # breadcrumbs
+            DEP_MODE=$(echo $DEP_KEY | awk -F "___" '{print $4}') # url|path|branch
 
             if [ "${DEP_TYPE}" != 'git' ]; then
                 continue
@@ -118,16 +118,16 @@ function dependencies_install(){
             eval $line
 
             if [ "${POINTER}" != "${DEP_NAME}" ]; then
-                declare "deps_git_parsed_$DEP_NAME"="name:$DEP_NAME;$DEP_MODE:$DEP_VALUE"
+                declare "deps___git___parsed___$DEP_NAME"="name:$DEP_NAME;$DEP_MODE:$DEP_VALUE"
                 POINTER=$DEP_NAME
             else
-                TMP="deps_git_parsed_$DEP_NAME"
+                TMP="deps___git___parsed___$DEP_NAME"
                 declare "$TMP"+=";$DEP_MODE:$DEP_VALUE"
             fi
         done
     fi
 
-    for k in ${!deps_git_parsed_*}; do
+    for k in ${!deps___git___parsed___*}; do
 
         VALUE=$(echo ${!k} | tr -d "\"")
 
