@@ -75,7 +75,7 @@ function git_clone(){
     if [ -z $branch ]; then
         branch='master'
     fi
-    git clone --quiet --depth=50 --branch=$2 $1  &>/dev/null;
+    git clone --quiet --depth=50 --branch=$branch $1  &>/dev/null;
 }
 
 # Create a zip of a package without extra files not needed
