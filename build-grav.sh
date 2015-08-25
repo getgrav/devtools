@@ -412,6 +412,7 @@ do
         # special case for grav core, creating an update package with no user folder
         DEST_UPD="${DIST_PATH}/${PREFIX}-update"
         cp -Rf "$GRAV_CORE_PATH" "$DEST_UPD"
+        rm "$DEST_UPD/.htaccess" "$DEST_UPD/robots.txt"
         rm -Rf "$DEST_UPD/user" "$DEST_UPD/logs" "$DEST_UPD/cache" "$DEST_UPD/images" "$DEST_UPD/backup"
         create_zip "${DEST_UPD}${VERSION}.zip" "./${PREFIX}-update"
 
