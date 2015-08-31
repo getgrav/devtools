@@ -172,6 +172,44 @@ function dependencies_install(){
 mkdir -p ${DIST_PATH}
 mkdir -p ${TMP_PATH}
 
+# Admin Package depedencies file
+cat <<EOT > "${TMP_PATH}/.grav-admin-deps"
+git:
+    admin:
+        url: https://github.com/getgrav/grav-plugin-admin
+        path: user/plugins/admin
+        branch: master
+    form:
+        url: https://github.com/getgrav/grav-plugin-form
+        path: user/plugins/form
+        branch: master
+    email:
+        url: https://github.com/getgrav/grav-plugin-email
+        path: user/plugins/email
+        branch: master
+    login:
+        url: https://github.com/getgrav/grav-plugin-login
+        path: user/plugins/login
+        branch: master
+links:
+    admin:
+        src: grav-plugin-admin
+        path: user/plugins/admin
+        scm: github
+    form:
+        src: grav-plugin-form
+        path: user/plugins/form
+        scm: github
+    email:
+        src: grav-plugin-email
+        path: user/plugins/email
+        scm: github
+    login:
+        src: grav-plugin-login
+        path: user/plugins/login
+        scm: github
+EOT
+
 # Start of output
 echo ""
 echo "${YELLOW}${BOLD}Grav Build System${TEXTRESET}"
@@ -409,11 +447,19 @@ do
     create_zip "${DEST}${VERSION}.zip" "./${PREFIX}"
 
     if [ "$TYPE" == 'base' ]; then
+        # special case for grav core, creating an admin package
+        DEST="${DIST_PATH}/$PREFIX"
+        dependencies_install "${TMP_PATH}/.grav-admin-deps" "Installing Admin Package dependencies:"
+        DEST_UPD="${DIST_PATH}/${PREFIX}-admin"
+        cp -Rf "$DEST" "$DEST_UPD"
+        create_zip "${DEST_UPD}${VERSION}.zip" "./${PREFIX}-admin"
+
+        rm -Rf $DEST_UPD
+
         # special case for grav core, creating an update package with no user folder
         DEST_UPD="${DIST_PATH}/${PREFIX}-update"
         cp -Rf "$GRAV_CORE_PATH" "$DEST_UPD"
-        rm "$DEST_UPD/.htaccess" "$DEST_UPD/robots.txt"
-        rm -Rf "$DEST_UPD/user" "$DEST_UPD/logs" "$DEST_UPD/cache" "$DEST_UPD/images" "$DEST_UPD/backup"
+        rm -Rf "$DEST_UPD/user" "$DEST_UPD/logs" "$DEST_UPD/cache" "$DEST_UPD/images" "$DEST_UPD/backup" "$DEST_UPD/.htaccess" "$DEST_UPD/robots.txt"
         create_zip "${DEST_UPD}${VERSION}.zip" "./${PREFIX}-update"
 
         rm -Rf $DEST_UPD
